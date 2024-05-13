@@ -1,0 +1,43 @@
+version: '3'
+
+services:
+  nginx:
+    build: ./app-docker-nginx-node  # Assuming context is the current directory
+    container_name: nginx
+    networks:
+      - node-network
+    ports:
+      - "8080:80"  # Expose port 8080 on the host to port 80 in the container
+    depends_on:
+      - app  # Ensure app starts before nginx
+
+  app:
+    build: ./app-docker-node-mysql  # Assuming context is the current directory
+    container_name: app
+    entrypoint: dockerize -wait tcp://db:3306 -timeout 20s docker-entrypoint.sh node index.js
+    networks:
+      - node-network
+    volumes:
+      - ./app-docker-node-mysql:/usr/src/app:ro  # Mount code read-only to prevent accidental changes
+      - ./node_modules:/usr/src/app/node_modules  # Assuming node_modules is in the current directory
+    depends_on:
+      - db  # Ensure db starts before app
+
+  db:
+    image: mysql:5.7
+    command: --innodb-use-native-aio=0  # Optimize for non-SSD storage
+    container_name: db
+    restart: unless-stopped  # Restart only on system failure (prevents unnecessary restarts)
+    environment:
+      - MYSQL_DATABASE=nodedb  # Set the database name
+      # Use a strong, unique password for the root user (replace with your own)
+      - MYSQL_ROOT_PASSWORD=root
+    volumes:
+      - ./mysql:/var/lib/mysql  # Persistent storage for database data
+    networks:
+      - node-network
+
+networks:
+  node-network:
+    driver: bridge
+    
