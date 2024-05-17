@@ -19,7 +19,7 @@ services:
       - node-network
     volumes:
       - ./app-docker-node-mysql:/usr/src/app:ro  # Mount code read-only to prevent accidental changes
-      - ./node_modules:/usr/src/app/node_modules  # Assuming node_modules is in the current directory
+
     depends_on:
       - db  # Ensure db starts before app
 
